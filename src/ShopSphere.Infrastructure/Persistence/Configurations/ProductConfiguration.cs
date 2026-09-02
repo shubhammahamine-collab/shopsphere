@@ -10,6 +10,8 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
         builder.HasKey(x => x.Id);
 
+        builder.HasQueryFilter(x => x.IsActive);
+
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(200);

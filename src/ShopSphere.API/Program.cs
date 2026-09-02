@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using ShopSphere.Application.Abstractions;
 using ShopSphere.Application.Features.Categories.Services;
+using ShopSphere.Application.Features.Products.Services;
 using ShopSphere.Infrastructure.Persistence.Context;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,7 @@ builder.Services.AddScoped<IApplicationDbContext>(
     provider => provider.GetRequiredService<ShopSphereDbContext>());
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddControllers();
 
