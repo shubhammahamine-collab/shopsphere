@@ -1,6 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using ShopSphere.API.Filters;
+using ShopSphere.API.Middleware;
 using ShopSphere.Application.Abstractions;
 using ShopSphere.Application.Features.Categories.Services;
+using ShopSphere.Application.Features.Orders.Services;
 using ShopSphere.Application.Features.Products.Services;
 using ShopSphere.Infrastructure.Persistence.Context;
 
@@ -15,8 +18,12 @@ builder.Services.AddScoped<IApplicationDbContext>(
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ApiResponseResultFilter>();
+});
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -24,6 +31,8 @@ builder.Services.AddOpenApi();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -57,7 +66,7 @@ app.MapControllers();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+//record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+//{
+//    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+//}

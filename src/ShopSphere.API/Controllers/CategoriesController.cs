@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ShopSphere.API.Models;
+using ShopSphere.Application.Features.Categories.DTOs;
 using ShopSphere.Application.Features.Categories.Requests;
 using ShopSphere.Application.Features.Categories.Services;
 
@@ -16,8 +18,10 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> Create(
-        CreateCategoryRequest request,
+            CreateCategoryRequest request,
         CancellationToken cancellationToken)
     {
         var category = await _categoryService.CreateAsync(
@@ -28,8 +32,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(List<CategoryDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult> GetAll(
-        CancellationToken cancellationToken)
+            CancellationToken cancellationToken)
     {
         var categories = await _categoryService.GetAllAsync(
             cancellationToken);
@@ -38,6 +43,8 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetById(
         int id,
         CancellationToken cancellationToken)
@@ -55,6 +62,9 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> Update(
         int id,
         UpdateCategoryRequest request,
@@ -74,6 +84,8 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Delete(
         int id,
         CancellationToken cancellationToken)
@@ -91,6 +103,8 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPost("{id:int}/restore")]
+    [ProducesResponseType(typeof(CategoryDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Restore(
         int id,
         CancellationToken cancellationToken)

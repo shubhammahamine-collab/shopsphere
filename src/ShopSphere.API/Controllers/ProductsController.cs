@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using ShopSphere.API.Models;
+using ShopSphere.Application.Features.Products.DTOs;
 using ShopSphere.Application.Features.Products.Requests;
 using ShopSphere.Application.Features.Products.Services;
 
@@ -16,6 +18,8 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult> Create(
         CreateProductRequest request,
         CancellationToken cancellationToken)
@@ -28,6 +32,7 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult> GetAll(
         CancellationToken cancellationToken)
     {
@@ -38,6 +43,8 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> GetById(
         int id,
         CancellationToken cancellationToken)
@@ -55,6 +62,9 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Update(
         int id,
         UpdateProductRequest request,
@@ -74,6 +84,8 @@ public class ProductsController : ControllerBase
     }
 
     [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Delete(
         int id,
         CancellationToken cancellationToken)
@@ -91,6 +103,8 @@ public class ProductsController : ControllerBase
     }
 
     [HttpPost("{id:int}/restore")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<ActionResult> Restore(
         int id,
         CancellationToken cancellationToken)
