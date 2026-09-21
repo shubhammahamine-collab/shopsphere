@@ -10,16 +10,21 @@ namespace ShopSphere.Application.Features.Orders.Services;
 public class OrderService : IOrderService
 {
     private readonly IApplicationDbContext _context;
+    private readonly ICurrentUserService _currentUserService;
 
-    public OrderService(IApplicationDbContext context)
+    public OrderService(
+        IApplicationDbContext context,
+        ICurrentUserService currentUserService)
     {
         _context = context;
+        _currentUserService = currentUserService;
     }
 
     public async Task<OrderDto> CreateAsync(CreateOrderRequest request)
     {
         var order = new Order
         {
+            UserId = _currentUserService.UserId,
             OrderNumber = $"ORD-{Guid.NewGuid():N}"[..12].ToUpper(),
             OrderDate = DateTime.UtcNow,
             Status = OrderStatuses.Pending,
@@ -91,7 +96,15 @@ public class OrderService : IOrderService
 
     public async Task<List<OrderDto>> GetAllAsync()
     {
-        return await _context.Orders
+        var query = _context.Orders.AsNoTracking();
+
+        if (!_currentUserService.IsAdmin)
+        {
+            query = query.Where(x =>
+                x.UserId == _currentUserService.UserId);
+        }
+
+        return await query
             .Select(x => new OrderDto
             {
                 Id = x.Id,
@@ -105,27 +118,22 @@ public class OrderService : IOrderService
 
     public async Task<OrderDto?> GetByIdAsync(int id)
     {
-        return await _context.Orders
-            .Where(x => x.Id == id)
-            .Select(x => new OrderDto
-            {
-                Id = x.Id,
-                OrderNumber = x.OrderNumber,
-                OrderDate = x.OrderDate,
-                TotalAmount = x.TotalAmount,
-                Status = x.Status,
+        var query = _context.Orders
+            .AsNoTracking()
+            .Include(x => x.OrderItems)
+            .Where(x => x.Id == id);
 
-                Items = x.OrderItems
-                    .Select(item => new OrderItemDto
-                    {
-                        ProductId = item.ProductId,
-                        Quantity = item.Quantity,
-                        UnitPrice = item.UnitPrice,
-                        TotalPrice = item.TotalPrice
-                    })
-                    .ToList()
-            })
-            .FirstOrDefaultAsync();
+        if (!_currentUserService.IsAdmin)
+        {
+            query = query.Where(x =>
+                x.UserId == _currentUserService.UserId);
+        }
+
+        var order = await query.FirstOrDefaultAsync();
+
+        return order == null
+            ? null
+            : MapToDto(order);
     }
 
     public async Task<OrderDto?> UpdateStatusAsync(int id, string status)

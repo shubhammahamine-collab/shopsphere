@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopSphere.Infrastructure.Persistence.Context;
 
@@ -11,9 +12,11 @@ using ShopSphere.Infrastructure.Persistence.Context;
 namespace ShopSphere.Infrastructure.Migrations
 {
     [DbContext(typeof(ShopSphereDbContext))]
-    partial class ShopSphereDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260916134505_AddUsers")]
+    partial class AddUsers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -90,15 +93,10 @@ namespace ShopSphere.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
                     b.HasIndex("OrderNumber")
                         .IsUnique();
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Order", (string)null);
                 });
@@ -244,15 +242,6 @@ namespace ShopSphere.Infrastructure.Migrations
                     b.ToTable("User", (string)null);
                 });
 
-            modelBuilder.Entity("ShopSphere.Domain.Entities.Order", b =>
-                {
-                    b.HasOne("ShopSphere.Domain.Entities.User", null)
-                        .WithMany("Orders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("ShopSphere.Domain.Entities.OrderItem", b =>
                 {
                     b.HasOne("ShopSphere.Domain.Entities.Order", "Order")
@@ -289,11 +278,6 @@ namespace ShopSphere.Infrastructure.Migrations
             modelBuilder.Entity("ShopSphere.Domain.Entities.Product", b =>
                 {
                     b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("ShopSphere.Domain.Entities.User", b =>
-                {
-                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

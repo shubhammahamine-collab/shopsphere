@@ -10,6 +10,11 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
     {
         builder.HasKey(x => x.Id);
 
+        builder.HasOne<User>()
+            .WithMany(x => x.Orders)
+            .HasForeignKey(x => x.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         builder.ToTable("Order");
 
         builder.HasQueryFilter(x => x.IsActive);
