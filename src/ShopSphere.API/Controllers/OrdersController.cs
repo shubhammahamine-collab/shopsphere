@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShopSphere.API.Models;
 using ShopSphere.Application.Features.Orders.DTOs;
 using ShopSphere.Application.Features.Orders.Requests;
 using ShopSphere.Application.Features.Orders.Services;
+using ShopSphere.Domain.Common;
 
 namespace ShopSphere.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class OrdersController : ControllerBase
 {
@@ -17,6 +20,7 @@ public class OrdersController : ControllerBase
         _orderService = orderService;
     }
 
+    [Authorize(Roles = UserRoles.Customer)]
     [HttpPost]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
@@ -51,7 +55,7 @@ public class OrdersController : ControllerBase
         return Ok(order);
     }
 
-
+    [Authorize(Roles = UserRoles.Admin)]
     [HttpPatch("{id}/status")]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
