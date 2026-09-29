@@ -19,6 +19,12 @@ public class ProductService : IProductService
         CreateProductRequest request,
         CancellationToken cancellationToken)
     {
+        if (request.StockQuantity < 0)
+        {
+            throw new ArgumentException(
+                "Stock quantity cannot be negative.");
+        }
+
         var product = new Product
         {
             CategoryId = request.CategoryId,
@@ -26,6 +32,7 @@ public class ProductService : IProductService
             Description = request.Description,
             SKU = request.SKU,
             Price = request.Price,
+            StockQuantity = request.StockQuantity,
             IsActive = true,
             CreatedAt = DateTime.UtcNow
         };
@@ -34,15 +41,7 @@ public class ProductService : IProductService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ProductDto
-        {
-            Id = product.Id,
-            CategoryId = product.CategoryId,
-            Name = product.Name,
-            Description = product.Description,
-            SKU = product.SKU,
-            Price = product.Price
-        };
+        return MapToDto(product);
     }
 
     public async Task<IReadOnlyList<ProductDto>> GetAllAsync(
@@ -57,7 +56,8 @@ public class ProductService : IProductService
                 Name = product.Name,
                 Description = product.Description,
                 SKU = product.SKU,
-                Price = product.Price
+                Price = product.Price,
+                StockQuantity = product.StockQuantity
             })
             .ToListAsync(cancellationToken);
     }
@@ -76,7 +76,8 @@ public class ProductService : IProductService
                 Name = product.Name,
                 Description = product.Description,
                 SKU = product.SKU,
-                Price = product.Price
+                Price = product.Price,
+                StockQuantity = product.StockQuantity
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -105,15 +106,7 @@ public class ProductService : IProductService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ProductDto
-        {
-            Id = product.Id,
-            CategoryId = product.CategoryId,
-            Name = product.Name,
-            Description = product.Description,
-            SKU = product.SKU,
-            Price = product.Price
-        };
+        return MapToDto(product);
     }
 
     public async Task<bool> DeleteAsync(
@@ -155,15 +148,7 @@ public class ProductService : IProductService
 
         if (product.IsActive)
         {
-            return new ProductDto
-            {
-                Id = product.Id,
-                CategoryId = product.CategoryId,
-                Name = product.Name,
-                Description = product.Description,
-                SKU = product.SKU,
-                Price = product.Price
-            };
+            return MapToDto(product);
         }
 
         product.IsActive = true;
@@ -171,6 +156,41 @@ public class ProductService : IProductService
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        return MapToDto(product);
+    }
+
+    public async Task<ProductDto> UpdateStockAsync(
+        int id,
+        UpdateStockRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.Quantity < 0)
+        {
+            throw new ArgumentException(
+                "Stock quantity cannot be negative.");
+        }
+
+        var product = await _context.Products
+            .FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
+
+        if (product == null)
+        {
+            throw new KeyNotFoundException(
+                $"Product with ID {id} not found.");
+        }
+
+        product.StockQuantity = request.Quantity;
+        product.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return MapToDto(product);
+    }
+
+    private ProductDto MapToDto(Product product)
+    {
         return new ProductDto
         {
             Id = product.Id,
@@ -178,7 +198,8 @@ public class ProductService : IProductService
             Name = product.Name,
             Description = product.Description,
             SKU = product.SKU,
-            Price = product.Price
+            Price = product.Price,
+            StockQuantity = product.StockQuantity
         };
     }
 }

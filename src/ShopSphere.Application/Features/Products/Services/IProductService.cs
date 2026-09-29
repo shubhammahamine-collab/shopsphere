@@ -28,4 +28,9 @@ public interface IProductService
     Task<ProductDto?> RestoreAsync(
         int id,
         CancellationToken cancellationToken);
+
+    Task<ProductDto> UpdateStockAsync(
+        int id,
+        UpdateStockRequest request,
+        CancellationToken cancellationToken);
 }
