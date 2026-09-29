@@ -1,4 +1,5 @@
-﻿using ShopSphere.API.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using ShopSphere.API.Models;
 
 namespace ShopSphere.API.Middleware;
 
@@ -30,6 +31,20 @@ public class ExceptionHandlingMiddleware
                 context,
                 StatusCodes.Status400BadRequest,
                 ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            await WriteErrorResponseAsync(
+                context,
+                StatusCodes.Status404NotFound,
+                ex.Message);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await WriteErrorResponseAsync(
+                context,
+                StatusCodes.Status409Conflict,
+                "The product stock was updated by another request. Please retry the order.");
         }
         catch (Exception)
         {

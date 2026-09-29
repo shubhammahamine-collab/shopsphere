@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using ShopSphere.API.Models;
 using ShopSphere.Application.Features.Products.DTOs;
 using ShopSphere.Application.Features.Products.Requests;
 using ShopSphere.Application.Features.Products.Services;
+using ShopSphere.Domain.Common;
 
 namespace ShopSphere.API.Controllers;
 
@@ -117,6 +119,26 @@ public class ProductsController : ControllerBase
         {
             return NotFound();
         }
+
+        return Ok(product);
+    }
+
+    [Authorize(Roles = UserRoles.Admin)]
+    [HttpPatch("{id:int}/stock")]
+    [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult> UpdateStock(
+        int id,
+        UpdateStockRequest request,
+        CancellationToken cancellationToken)
+    {
+        var product = await _productService.UpdateStockAsync(
+            id,
+            request,
+            cancellationToken);
 
         return Ok(product);
     }

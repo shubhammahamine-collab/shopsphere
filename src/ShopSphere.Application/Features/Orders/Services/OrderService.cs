@@ -41,17 +41,26 @@ public class OrderService : IOrderService
 
             if (product == null)
             {
-                throw new Exception(
+                throw new KeyNotFoundException(
                     $"Product with ID {item.ProductId} was not found.");
             }
 
             if (item.Quantity <= 0)
             {
-                throw new Exception(
+                throw new ArgumentException(
                     $"Quantity for product {item.ProductId} must be greater than 0.");
             }
 
+            if (product.StockQuantity < item.Quantity)
+            {
+                throw new InvalidOperationException(
+                    $"Insufficient stock for product {product.Name}. " +
+                    $"Available: {product.StockQuantity}, Requested: {item.Quantity}.");
+            }
+
             var totalPrice = product.Price * item.Quantity;
+
+            product.StockQuantity -= item.Quantity;
 
             var orderItem = new OrderItem
             {

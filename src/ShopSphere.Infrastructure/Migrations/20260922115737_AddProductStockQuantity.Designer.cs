@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShopSphere.Infrastructure.Persistence.Context;
 
@@ -11,9 +12,11 @@ using ShopSphere.Infrastructure.Persistence.Context;
 namespace ShopSphere.Infrastructure.Migrations
 {
     [DbContext(typeof(ShopSphereDbContext))]
-    partial class ShopSphereDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922115737_AddProductStockQuantity")]
+    partial class AddProductStockQuantity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -175,12 +178,6 @@ namespace ShopSphere.Infrastructure.Migrations
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
 
                     b.Property<string>("SKU")
                         .IsRequired()

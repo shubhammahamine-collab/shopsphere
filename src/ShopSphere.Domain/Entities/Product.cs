@@ -14,6 +14,10 @@ public class Product
 
     public decimal Price { get; set; }
 
+    public int StockQuantity { get; set; }
+
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
     public bool IsActive { get; set; }
 
     public DateTime CreatedAt { get; set; }
