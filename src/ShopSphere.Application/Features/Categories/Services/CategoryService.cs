@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ShopSphere.Application.Abstractions;
 using ShopSphere.Application.Features.Categories.DTOs;
 using ShopSphere.Application.Features.Categories.Requests;
@@ -9,16 +10,24 @@ namespace ShopSphere.Application.Features.Categories.Services;
 public class CategoryService : ICategoryService
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILogger<CategoryService> _logger;
 
-    public CategoryService(IApplicationDbContext context)
+    public CategoryService(
+        IApplicationDbContext context,
+        ILogger<CategoryService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<CategoryDto> CreateAsync(
         CreateCategoryRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Creating category {CategoryName}.",
+            request.Name);
+
         var category = new Category
         {
             Name = request.Name,
@@ -30,6 +39,11 @@ public class CategoryService : ICategoryService
         _context.Categories.Add(category);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Category {CategoryId} created successfully with name {CategoryName}.",
+            category.Id,
+            category.Name);
 
         return new CategoryDto
         {
@@ -81,6 +95,10 @@ public class CategoryService : ICategoryService
 
         if (category is null)
         {
+            _logger.LogWarning(
+                "Category {CategoryId} was not found for update.",
+                id);
+
             return null;
         }
 
@@ -89,6 +107,10 @@ public class CategoryService : ICategoryService
         category.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Category {CategoryId} updated successfully.",
+            category.Id);
 
         return new CategoryDto
         {
@@ -109,6 +131,10 @@ public class CategoryService : ICategoryService
 
         if (category is null)
         {
+            _logger.LogWarning(
+                "Category {CategoryId} was not found for deletion.",
+                id);
+
             return false;
         }
 
@@ -116,6 +142,10 @@ public class CategoryService : ICategoryService
         category.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Category {CategoryId} soft deleted successfully.",
+            category.Id);
 
         return true;
     }
@@ -132,6 +162,10 @@ public class CategoryService : ICategoryService
 
         if (category is null)
         {
+            _logger.LogWarning(
+                "Category {CategoryId} was not found for restore.",
+                id);
+
             return null;
         }
 
@@ -149,6 +183,10 @@ public class CategoryService : ICategoryService
         category.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Category {CategoryId} restored successfully.",
+            category.Id);
 
         return new CategoryDto
         {

@@ -6,10 +6,14 @@ namespace ShopSphere.API.Middleware;
 public class ExceptionHandlingMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
 
-    public ExceptionHandlingMiddleware(RequestDelegate next)
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger)
     {
         _next = next;
+        _logger = logger;
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -20,6 +24,12 @@ public class ExceptionHandlingMiddleware
         }
         catch (ArgumentException ex)
         {
+            _logger.LogWarning(
+                ex,
+                "Validation error while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
             await WriteErrorResponseAsync(
                 context,
                 StatusCodes.Status400BadRequest,
@@ -27,6 +37,12 @@ public class ExceptionHandlingMiddleware
         }
         catch (InvalidOperationException ex)
         {
+            _logger.LogWarning(
+                ex,
+                "Invalid business operation while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
             await WriteErrorResponseAsync(
                 context,
                 StatusCodes.Status400BadRequest,
@@ -34,20 +50,38 @@ public class ExceptionHandlingMiddleware
         }
         catch (KeyNotFoundException ex)
         {
+            _logger.LogWarning(
+                ex,
+                "Resource not found while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
             await WriteErrorResponseAsync(
                 context,
                 StatusCodes.Status404NotFound,
                 ex.Message);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException ex)
         {
+            _logger.LogWarning(
+                ex,
+                "Database concurrency conflict while processing {Method} {Path}.",
+                context.Request.Method,
+                context.Request.Path);
+
             await WriteErrorResponseAsync(
                 context,
                 StatusCodes.Status409Conflict,
                 "The product stock was updated by another request. Please retry the order.");
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogError(
+                ex,
+                "Unhandled exception occurred while processing {Method} {Path}",
+                context.Request.Method,
+                context.Request.Path);
+
             await WriteErrorResponseAsync(
                 context,
                 StatusCodes.Status500InternalServerError,
