@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ShopSphere.Application.Abstractions;
 using ShopSphere.Application.Features.Orders.DTOs;
 using ShopSphere.Application.Features.Orders.Requests;
@@ -11,17 +12,25 @@ public class OrderService : IOrderService
 {
     private readonly IApplicationDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<OrderService> _logger;
 
     public OrderService(
         IApplicationDbContext context,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        ILogger<OrderService> logger)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<OrderDto> CreateAsync(CreateOrderRequest request)
     {
+        _logger.LogInformation(
+            "Creating order for user {UserId} with {ItemCount} items.",
+            _currentUserService.UserId,
+            request.Items.Count);
+
         var order = new Order
         {
             UserId = _currentUserService.UserId,
@@ -41,18 +50,33 @@ public class OrderService : IOrderService
 
             if (product == null)
             {
+                _logger.LogWarning(
+                    "Order creation failed because product {ProductId} was not found.",
+                    item.ProductId);
+
                 throw new KeyNotFoundException(
                     $"Product with ID {item.ProductId} was not found.");
             }
 
             if (item.Quantity <= 0)
             {
+                _logger.LogWarning(
+                    "Invalid order quantity {Quantity} for product {ProductId}.",
+                    item.Quantity,
+                    item.ProductId);
+
                 throw new ArgumentException(
                     $"Quantity for product {item.ProductId} must be greater than 0.");
             }
 
             if (product.StockQuantity < item.Quantity)
             {
+                _logger.LogWarning(
+                    "Insufficient stock for product {ProductId}. Available: {AvailableStock}, Requested: {RequestedQuantity}.",
+                    product.Id,
+                    product.StockQuantity,
+                    item.Quantity);
+
                 throw new InvalidOperationException(
                     $"Insufficient stock for product {product.Name}. " +
                     $"Available: {product.StockQuantity}, Requested: {item.Quantity}.");
@@ -82,6 +106,12 @@ public class OrderService : IOrderService
         _context.Orders.Add(order);
 
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Order {OrderNumber} created successfully for user {UserId} with total amount {TotalAmount}.",
+            order.OrderNumber,
+            order.UserId,
+            order.TotalAmount);
 
         return new OrderDto
         {
@@ -165,10 +195,19 @@ public class OrderService : IOrderService
 
         ValidateStatusTransition(order.Status, status);
 
+        var oldStatus = order.Status;
+
         order.Status = status;
         order.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+
+        _logger.LogInformation(
+            "Order {OrderId} status changed from {OldStatus} to {NewStatus} by user {UserId}.",
+            order.Id,
+            oldStatus,
+            status,
+            _currentUserService.UserId);
 
         return MapToDto(order);
     }

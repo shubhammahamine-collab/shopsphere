@@ -5,7 +5,11 @@ namespace ShopSphere.Application.Features.Users.Services;
 
 public interface IUserService
 {
-    Task<UserDto> RegisterAsync(RegisterUserRequest request);
+    Task<UserDto> RegisterAsync(
+        RegisterUserRequest request,
+        CancellationToken cancellationToken);
 
-    Task<LoginResponseDto?> LoginAsync(LoginUserRequest request);
+    Task<LoginResponseDto?> LoginAsync(
+        LoginUserRequest request,
+        CancellationToken cancellationToken);
 }

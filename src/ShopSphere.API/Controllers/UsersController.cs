@@ -21,9 +21,12 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register(
-        RegisterUserRequest request)
+        RegisterUserRequest request,
+        CancellationToken cancellationToken)
     {
-        var user = await _userService.RegisterAsync(request);
+        var user = await _userService.RegisterAsync(
+            request,
+            cancellationToken);
 
         return Ok(user);
     }
@@ -32,9 +35,12 @@ public class UsersController : ControllerBase
     [ProducesResponseType(typeof(LoginResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(
-    LoginUserRequest request)
+        LoginUserRequest request,
+        CancellationToken cancellationToken)
     {
-        var user = await _userService.LoginAsync(request);
+        var user = await _userService.LoginAsync(
+            request,
+            cancellationToken);
 
         if (user == null)
         {

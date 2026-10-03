@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using ShopSphere.Application.Abstractions;
 using ShopSphere.Application.Features.Products.DTOs;
 using ShopSphere.Application.Features.Products.Requests;
@@ -9,18 +10,32 @@ namespace ShopSphere.Application.Features.Products.Services;
 public class ProductService : IProductService
 {
     private readonly IApplicationDbContext _context;
+    private readonly ILogger<ProductService> _logger;
 
-    public ProductService(IApplicationDbContext context)
+    public ProductService(
+        IApplicationDbContext context,
+        ILogger<ProductService> logger)
     {
         _context = context;
+        _logger = logger;
     }
 
     public async Task<ProductDto> CreateAsync(
         CreateProductRequest request,
         CancellationToken cancellationToken)
     {
+        _logger.LogInformation(
+            "Creating product {ProductName} with SKU {SKU}.",
+            request.Name,
+            request.SKU);
+
         if (request.StockQuantity < 0)
         {
+            _logger.LogWarning(
+                "Invalid stock quantity {StockQuantity} while creating product with SKU {SKU}.",
+                request.StockQuantity,
+                request.SKU);
+
             throw new ArgumentException(
                 "Stock quantity cannot be negative.");
         }
@@ -40,6 +55,11 @@ public class ProductService : IProductService
         _context.Products.Add(product);
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Product {ProductId} created successfully with SKU {SKU}.",
+            product.Id,
+            product.SKU);
 
         return MapToDto(product);
     }
@@ -94,6 +114,10 @@ public class ProductService : IProductService
 
         if (product is null)
         {
+            _logger.LogWarning(
+                "Product {ProductId} was not found for update.",
+                id);
+
             return null;
         }
 
@@ -105,6 +129,10 @@ public class ProductService : IProductService
         product.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Product {ProductId} updated successfully.",
+            product.Id);
 
         return MapToDto(product);
     }
@@ -120,6 +148,10 @@ public class ProductService : IProductService
 
         if (product is null)
         {
+            _logger.LogWarning(
+                "Product {ProductId} was not found for deletion.",
+                id);
+
             return false;
         }
 
@@ -127,6 +159,10 @@ public class ProductService : IProductService
         product.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Product {ProductId} soft deleted successfully.",
+            product.Id);
 
         return true;
     }
@@ -143,6 +179,10 @@ public class ProductService : IProductService
 
         if (product is null)
         {
+            _logger.LogWarning(
+                "Product {ProductId} was not found for restore.",
+                id);
+
             return null;
         }
 
@@ -156,6 +196,10 @@ public class ProductService : IProductService
 
         await _context.SaveChangesAsync(cancellationToken);
 
+        _logger.LogInformation(
+            "Product {ProductId} restored successfully.",
+            product.Id);
+
         return MapToDto(product);
     }
 
@@ -166,6 +210,11 @@ public class ProductService : IProductService
     {
         if (request.Quantity < 0)
         {
+            _logger.LogWarning(
+                "Invalid stock quantity {StockQuantity} for product {ProductId}.",
+                request.Quantity,
+                id);
+
             throw new ArgumentException(
                 "Stock quantity cannot be negative.");
         }
@@ -177,14 +226,26 @@ public class ProductService : IProductService
 
         if (product == null)
         {
+            _logger.LogWarning(
+                "Product {ProductId} was not found for stock update.",
+                id);
+
             throw new KeyNotFoundException(
                 $"Product with ID {id} not found.");
         }
+
+        var oldStockQuantity = product.StockQuantity;
 
         product.StockQuantity = request.Quantity;
         product.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Product {ProductId} stock updated from {OldStockQuantity} to {NewStockQuantity}.",
+            product.Id,
+            oldStockQuantity,
+            product.StockQuantity);
 
         return MapToDto(product);
     }
