@@ -24,7 +24,9 @@ public class OrderService : IOrderService
         _logger = logger;
     }
 
-    public async Task<OrderDto> CreateAsync(CreateOrderRequest request)
+    public async Task<OrderDto> CreateAsync(
+        CreateOrderRequest request,
+        CancellationToken cancellationToken)
     {
         _logger.LogInformation(
             "Creating order for user {UserId} with {ItemCount} items.",
@@ -46,7 +48,9 @@ public class OrderService : IOrderService
         foreach (var item in request.Items)
         {
             var product = await _context.Products
-                .FirstOrDefaultAsync(x => x.Id == item.ProductId);
+                .FirstOrDefaultAsync(
+                    x => x.Id == item.ProductId,
+                    cancellationToken);
 
             if (product == null)
             {
@@ -105,7 +109,7 @@ public class OrderService : IOrderService
 
         _context.Orders.Add(order);
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Order {OrderNumber} created successfully for user {UserId} with total amount {TotalAmount}.",
@@ -133,7 +137,8 @@ public class OrderService : IOrderService
         };
     }
 
-    public async Task<List<OrderDto>> GetAllAsync()
+    public async Task<List<OrderDto>> GetAllAsync(
+        CancellationToken cancellationToken)
     {
         var query = _context.Orders.AsNoTracking();
 
@@ -152,10 +157,12 @@ public class OrderService : IOrderService
                 TotalAmount = x.TotalAmount,
                 Status = x.Status
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
     }
 
-    public async Task<OrderDto?> GetByIdAsync(int id)
+    public async Task<OrderDto?> GetByIdAsync(
+        int id,
+        CancellationToken cancellationToken)
     {
         var query = _context.Orders
             .AsNoTracking()
@@ -168,18 +175,24 @@ public class OrderService : IOrderService
                 x.UserId == _currentUserService.UserId);
         }
 
-        var order = await query.FirstOrDefaultAsync();
+        var order = await query.FirstOrDefaultAsync(
+            cancellationToken);
 
         return order == null
             ? null
             : MapToDto(order);
     }
 
-    public async Task<OrderDto?> UpdateStatusAsync(int id, string status)
+    public async Task<OrderDto?> UpdateStatusAsync(
+        int id,
+        string status,
+        CancellationToken cancellationToken)
     {
         var order = await _context.Orders
             .Include(x => x.OrderItems)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(
+                x => x.Id == id,
+                cancellationToken);
 
         if (order == null)
         {
@@ -200,7 +213,7 @@ public class OrderService : IOrderService
         order.Status = status;
         order.UpdatedAt = DateTime.UtcNow;
 
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
             "Order {OrderId} status changed from {OldStatus} to {NewStatus} by user {UserId}.",

@@ -24,18 +24,24 @@ public class OrdersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create(CreateOrderRequest request)
+    public async Task<IActionResult> Create(
+        CreateOrderRequest request,
+        CancellationToken cancellationToken)
     {
-        var order = await _orderService.CreateAsync(request);
+        var order = await _orderService.CreateAsync(
+            request,
+            cancellationToken);
 
         return Ok(order);
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(List<OrderDto>), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(
+        CancellationToken cancellationToken)
     {
-        var orders = await _orderService.GetAllAsync();
+        var orders = await _orderService.GetAllAsync(
+            cancellationToken);
 
         return Ok(orders);
     }
@@ -43,9 +49,13 @@ public class OrdersController : ControllerBase
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(OrderDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetById(int id)
+    public async Task<IActionResult> GetById(
+        int id,
+        CancellationToken cancellationToken)
     {
-        var order = await _orderService.GetByIdAsync(id);
+        var order = await _orderService.GetByIdAsync(
+            id,
+            cancellationToken);
 
         if (order == null)
         {
@@ -62,9 +72,13 @@ public class OrdersController : ControllerBase
     [ProducesResponseType(typeof(ApiErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UpdateStatus(
         int id,
-        [FromQuery] string status)
+        [FromQuery] string status,
+        CancellationToken cancellationToken)
     {
-        var order = await _orderService.UpdateStatusAsync(id, status);
+        var order = await _orderService.UpdateStatusAsync(
+            id,
+            status,
+            cancellationToken);
 
         if (order == null)
         {
