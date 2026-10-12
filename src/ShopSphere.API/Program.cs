@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using ShopSphere.API.Middleware;
 using ShopSphere.API.Services;
 using ShopSphere.Application.Abstractions;
 using ShopSphere.Application.Features.Categories.Services;
+using ShopSphere.Application.Features.Categories.Validators;
 using ShopSphere.Application.Features.Orders.Services;
 using ShopSphere.Application.Features.Products.Services;
 using ShopSphere.Application.Features.Users.DTOs;
@@ -56,11 +58,15 @@ builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
+builder.Services.AddValidatorsFromAssemblyContaining<
+    CreateCategoryRequestValidator>();
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<ApiResponseResultFilter>();
+    options.Filters.Add<ValidationFilter>();
 });
 
 // Add services to the container.
