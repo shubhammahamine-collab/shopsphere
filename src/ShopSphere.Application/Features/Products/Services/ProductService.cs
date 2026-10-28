@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using ShopSphere.Application.Abstractions;
+using ShopSphere.Application.Common;
 using ShopSphere.Application.Features.Products.DTOs;
 using ShopSphere.Application.Features.Products.Requests;
 using ShopSphere.Domain.Entities;
@@ -80,6 +81,106 @@ public class ProductService : IProductService
                 StockQuantity = product.StockQuantity
             })
             .ToListAsync(cancellationToken);
+    }
+
+
+    public async Task<PagedResponse<ProductDto>> GetPagedAsync(
+        ProductQueryRequest request,
+        CancellationToken cancellationToken)
+    {
+        var query = _context.Products
+            .AsNoTracking()
+            .AsQueryable();
+
+        // Search by product name or SKU.
+        if (!string.IsNullOrWhiteSpace(request.SearchTerm))
+        {
+            var searchTerm = request.SearchTerm.Trim();
+
+            query = query.Where(product =>
+                product.Name.Contains(searchTerm) ||
+                product.SKU.Contains(searchTerm));
+        }
+
+        // Filter by category.
+        if (request.CategoryId.HasValue)
+        {
+            query = query.Where(product =>
+                product.CategoryId == request.CategoryId.Value);
+        }
+
+        // Filter by minimum price.
+        if (request.MinPrice.HasValue)
+        {
+            query = query.Where(product =>
+                product.Price >= request.MinPrice.Value);
+        }
+
+        // Filter by maximum price.
+        if (request.MaxPrice.HasValue)
+        {
+            query = query.Where(product =>
+                product.Price <= request.MaxPrice.Value);
+        }
+
+        // Count matching products before pagination.
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        // Apply allowlisted sorting with a stable secondary key.
+        var sortBy = request.SortBy.Trim();
+
+        query = sortBy.ToLowerInvariant() switch
+        {
+            "name" => request.SortDescending
+                ? query.OrderByDescending(product => product.Name)
+                    .ThenByDescending(product => product.Id)
+                : query.OrderBy(product => product.Name)
+                    .ThenBy(product => product.Id),
+
+            "price" => request.SortDescending
+                ? query.OrderByDescending(product => product.Price)
+                    .ThenByDescending(product => product.Id)
+                : query.OrderBy(product => product.Price)
+                    .ThenBy(product => product.Id),
+
+            "sku" => request.SortDescending
+                ? query.OrderByDescending(product => product.SKU)
+                    .ThenByDescending(product => product.Id)
+                : query.OrderBy(product => product.SKU)
+                    .ThenBy(product => product.Id),
+
+            "stockquantity" => request.SortDescending
+                ? query.OrderByDescending(product => product.StockQuantity)
+                    .ThenByDescending(product => product.Id)
+                : query.OrderBy(product => product.StockQuantity)
+                    .ThenBy(product => product.Id),
+
+            _ => throw new ArgumentException(
+                "Unsupported product sort field.")
+        };
+
+        var items = await query
+            .Skip((request.PageNumber - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .Select(product => new ProductDto
+            {
+                Id = product.Id,
+                CategoryId = product.CategoryId,
+                Name = product.Name,
+                Description = product.Description,
+                SKU = product.SKU,
+                Price = product.Price,
+                StockQuantity = product.StockQuantity
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PagedResponse<ProductDto>
+        {
+            Items = items,
+            PageNumber = request.PageNumber,
+            PageSize = request.PageSize,
+            TotalCount = totalCount
+        };
     }
 
     public async Task<ProductDto?> GetByIdAsync(

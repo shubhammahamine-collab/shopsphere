@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ShopSphere.API.Models;
+using ShopSphere.Application.Common;
 using ShopSphere.Application.Features.Products.DTOs;
 using ShopSphere.Application.Features.Products.Requests;
 using ShopSphere.Application.Features.Products.Services;
@@ -33,16 +34,22 @@ public class ProductsController : ControllerBase
         return Ok(product);
     }
 
+    /// <summary>
+    /// Gets products with pagination, filtering, and sorting.
+    /// </summary>
     [HttpGet]
-    [ProducesResponseType(typeof(List<ProductDto>), StatusCodes.Status200OK)]
-    public async Task<ActionResult> GetAll(
+    [ProducesResponseType(typeof(PagedResponse<ProductDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResponse<ProductDto>>> GetAll(
+        [FromQuery] ProductQueryRequest request,
         CancellationToken cancellationToken)
     {
-        var products = await _productService.GetAllAsync(
+        var products = await _productService.GetPagedAsync(
+            request,
             cancellationToken);
 
         return Ok(products);
     }
+
 
     [HttpGet("{id:int}")]
     [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]

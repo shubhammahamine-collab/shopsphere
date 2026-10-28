@@ -418,4 +418,270 @@ public class ProductServiceTests
         Assert.Equal("ACTIVE-MOUSE-001", result[0].SKU);
     }
 
+
+    [Fact]
+    public async Task GetPagedAsync_DefaultRequest_ReturnsFirstPage()
+    {
+        var (context, service) = CreateService();
+
+        context.Products.AddRange(
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Mouse",
+                SKU = "MOUSE-001",
+                Price = 799m,
+                StockQuantity = 10,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Keyboard",
+                SKU = "KEYBOARD-001",
+                Price = 1499m,
+                StockQuantity = 5,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Monitor",
+                SKU = "MONITOR-001",
+                Price = 5999m,
+                StockQuantity = 3,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var result = await service.GetPagedAsync(
+            new ProductQueryRequest { PageSize = 2 },
+            CancellationToken.None);
+
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(3, result.TotalCount);
+        Assert.Equal(1, result.PageNumber);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(2, result.TotalPages);
+        Assert.True(result.HasNextPage);
+        Assert.False(result.HasPreviousPage);
+        Assert.Equal("Keyboard", result.Items[0].Name);
+        Assert.Equal("Monitor", result.Items[1].Name);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_SearchTerm_ReturnsMatchingProducts()
+    {
+        var (context, service) = CreateService();
+
+        context.Products.AddRange(
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Wireless Mouse",
+                SKU = "WM-001",
+                Price = 799m,
+                StockQuantity = 10,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Mechanical Keyboard",
+                SKU = "KB-001",
+                Price = 1499m,
+                StockQuantity = 5,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "USB Hub",
+                SKU = "WM-USB-003",
+                Price = 499m,
+                StockQuantity = 8,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var result = await service.GetPagedAsync(
+            new ProductQueryRequest
+            {
+                SearchTerm = "WM"
+            },
+            CancellationToken.None);
+
+        Assert.Equal(2, result.TotalCount);
+        Assert.Contains(result.Items, p => p.SKU == "WM-001");
+        Assert.Contains(result.Items, p => p.SKU == "WM-USB-003");
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_CategoryAndPriceFilters_ReturnsMatchingProducts()
+    {
+        var (context, service) = CreateService();
+
+        context.Products.AddRange(
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Mouse",
+                SKU = "MOUSE-001",
+                Price = 799m,
+                StockQuantity = 10,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Keyboard",
+                SKU = "KEYBOARD-001",
+                Price = 1499m,
+                StockQuantity = 5,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 3,
+                Name = "Monitor",
+                SKU = "MONITOR-001",
+                Price = 5999m,
+                StockQuantity = 3,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var result = await service.GetPagedAsync(
+            new ProductQueryRequest
+            {
+                CategoryId = 2,
+                MinPrice = 700m,
+                MaxPrice = 1000m
+            },
+            CancellationToken.None);
+
+        var product = Assert.Single(result.Items);
+        Assert.Equal("MOUSE-001", product.SKU);
+        Assert.Equal(1, result.TotalCount);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_SortByPriceDescending_ReturnsHighestPriceFirst()
+    {
+        var (context, service) = CreateService();
+
+        context.Products.AddRange(
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Mouse",
+                SKU = "MOUSE-001",
+                Price = 799m,
+                StockQuantity = 10,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Keyboard",
+                SKU = "KEYBOARD-001",
+                Price = 1499m,
+                StockQuantity = 5,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "Monitor",
+                SKU = "MONITOR-001",
+                Price = 5999m,
+                StockQuantity = 3,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var result = await service.GetPagedAsync(
+            new ProductQueryRequest
+            {
+                SortBy = "Price",
+                SortDescending = true
+            },
+            CancellationToken.None);
+
+        Assert.Equal(3, result.Items.Count);
+        Assert.Equal("MONITOR-001", result.Items[0].SKU);
+        Assert.Equal("KEYBOARD-001", result.Items[1].SKU);
+        Assert.Equal("MOUSE-001", result.Items[2].SKU);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_SecondPage_ReturnsRemainingProducts()
+    {
+        var (context, service) = CreateService();
+
+        context.Products.AddRange(
+            new Product
+            {
+                CategoryId = 2,
+                Name = "A Mouse",
+                SKU = "MOUSE-001",
+                Price = 799m,
+                StockQuantity = 10,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "B Keyboard",
+                SKU = "KEYBOARD-001",
+                Price = 1499m,
+                StockQuantity = 5,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Product
+            {
+                CategoryId = 2,
+                Name = "C Monitor",
+                SKU = "MONITOR-001",
+                Price = 5999m,
+                StockQuantity = 3,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+
+        await context.SaveChangesAsync();
+
+        var result = await service.GetPagedAsync(
+            new ProductQueryRequest
+            {
+                PageNumber = 2,
+                PageSize = 2
+            },
+            CancellationToken.None);
+
+        var product = Assert.Single(result.Items);
+        Assert.Equal("C Monitor", product.Name);
+        Assert.Equal(3, result.TotalCount);
+        Assert.True(result.HasPreviousPage);
+        Assert.False(result.HasNextPage);
+    }
+
 }
