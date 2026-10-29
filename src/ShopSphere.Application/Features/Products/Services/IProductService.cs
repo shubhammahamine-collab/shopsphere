@@ -1,4 +1,5 @@
-﻿using ShopSphere.Application.Features.Products.DTOs;
+﻿using ShopSphere.Application.Common;
+using ShopSphere.Application.Features.Products.DTOs;
 using ShopSphere.Application.Features.Products.Requests;
 
 namespace ShopSphere.Application.Features.Products.Services;
@@ -10,6 +11,10 @@ public interface IProductService
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<ProductDto>> GetAllAsync(
+        CancellationToken cancellationToken);
+
+    Task<PagedResponse<ProductDto>> GetPagedAsync(
+        ProductQueryRequest request,
         CancellationToken cancellationToken);
 
     Task<ProductDto?> GetByIdAsync(
